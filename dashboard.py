@@ -17,13 +17,12 @@ def ouverture_data() :
     tab = pd.read_csv("X_test.csv")
     read_and_cache_csv = st.cache_resource(pd.read_csv)
     df = read_and_cache_csv("X_test_scaled.csv")
-     #X_train_scaled = read_and_cache_csv("X_train_scaled.csv")
     return tab, df
 
-# Choix du vient et division des data
+# Choix du client et division des données
 def choix_client():
     st.markdown("## Premier chapitre : Statut du crédit client")
-    # Sélection du client et division des data
+    # Sélection du client et division des données
     choix = st.selectbox("Choix du client", df["SK_ID_CURR"])
     data = df[df["SK_ID_CURR"] == choix]
     tab_1 = tab[tab["SK_ID_CURR"] == choix]
@@ -31,20 +30,19 @@ def choix_client():
 
 # Fonction qui fait un lien avec le FASTAPI
 # Client est à risque ou pas
-def client_api(df):
+def client_api(df, heroku_url):
     client = df["SK_ID_CURR"]
     df_json = client.to_json(orient='records')
     payload = df_json.strip("[]")
     headers = {
         'Content-Type' : 'application/json'
     }
-    url = "http://127.0.0.1:8000/predict="+payload
+    url = f"{heroku_url}/predict"  # Utilisez l'URL de votre application FastAPI sur Heroku
     data = {
         "SK_ID_CURR": "100001"
     }
-    # Make a POST request with the data
-    response = requests.post("http://127.0.0.1:8000/predict", json=data)
-    #response = requests.post(url)
+    # Faites une requête POST avec les données
+    response = requests.post(url, json=data)
     st.write(response.text)
     if response.json() == 0 :
         rep = 0
@@ -54,31 +52,29 @@ def client_api(df):
         st.error("Le client est à risque:")
     return rep
 
-# Appel de toute les fonctions
+# Appel de toutes les fonctions
 if __name__ == '__main__':
-
     # Titre du document
     st.title('Dashboard : Prédiction de crédit')
 
-    # Ouverture des data
+    # Ouverture des données
     tab, df = ouverture_data()
 
     # Premier chapitre
     # Choix du client
     data, tab_1, choix = choix_client()
     # FastAPI et client à risque
-    rep = client_api(data)
+    heroku_url = "https://p7-fastapi-1755d25e6ece.herokuapp.com"  # Remplacez par votre URL Heroku FastAPI
+    rep = client_api(data, heroku_url)
 
     # Deuxième chapitre
     # Âge et métier
     age_client(tab_1)
 
-    # Troisème chapitre
-    # Information client credit    
+    # Troisième chapitre
+    # Information client crédit    
     graphique(tab_1)
 
-    # Quatreième chapitre
+    # Quatrième chapitre
     # Note extérieure
     quatrieme_chapitre(tab_1, choix)
-
-  
